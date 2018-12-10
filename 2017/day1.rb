@@ -8,25 +8,29 @@ class DigitCaptcha
     @sequence = input.chars.map(&:to_i)
   end
 
-  def sum_of_repeated_digits
-    shadow = @sequence + [@sequence[-1]]
+  def sum_of_repeated_digits(step = 1)
+    pair_sequence = sequence + sequence[0...step]
 
-    sequence.each_with_index.map do |d, i|
-      d == shadow[i + 1] ? d : 0
+    sequence.select.with_index do |d, i|
+      d == pair_sequence[i + step]
     end.reduce(&:+)
   end
 
   def sum_of_half_way_repeated_digits
-    length = @sequence.size
-    half_way = length / 2
+    sum_of_repeated_digits(sequence.length / 2)
+  end
 
-    sequence.each_with_index.map do |d, i|
-      pair_index =  i + half_way
+  # An early different version
+  def _sum_of_repeated_digits(step = 1)
+    length = sequence.size
+
+    sequence.select.with_index do |d, i|
+      pair_index =  i + step
       pair_index -= length if pair_index >= length
-      d == sequence[pair_index] ? d : 0
+      d == sequence[pair_index]
     end.reduce(&:+)
   end
 end
 
-puts DigitCaptcha.new(sequence).sum_of_repeated_digits
-puts DigitCaptcha.new(sequence).sum_of_half_way_repeated_digits
+puts DigitCaptcha.new(sequence).sum_of_repeated_digits # 1144
+puts DigitCaptcha.new(sequence).sum_of_half_way_repeated_digits # 1194
