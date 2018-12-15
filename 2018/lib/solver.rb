@@ -1,7 +1,14 @@
 require 'ostruct'
+require 'date'
+
+def assert_truthy(value)
+  return if value
+  raise "assertion failure: #{value} is not truthy"
+end
 
 def assert(actual, expected)
   return if actual == expected
+
   raise "assertion failure: expected: #{expected.inspect}\nactual: #{actual.inspect}"
 end
 
@@ -14,3 +21,4 @@ class SolverBase
 end
 
 require './lib/day_03_solver'
+require './lib/day_04_solver'
