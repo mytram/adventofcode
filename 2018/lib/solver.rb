@@ -22,3 +22,4 @@ end
 
 require './lib/day_03_solver'
 require './lib/day_04_solver'
+require './lib/day_05_solver'
