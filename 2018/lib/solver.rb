@@ -16,7 +16,18 @@ class SolverBase
   attr_reader :input
 
   def initialize(input = nil)
-    @input = input
+    @input = input || raw_input
+  end
+
+  def raw_input
+    file_path = File.join(
+      File.dirname(File.absolute_path(__FILE__)),
+      '../data/',
+      "#{self.class.name.sub('Solver', '').downcase}.txt"
+    )
+
+    file_path = File.absolute_path(file_path)
+    File.open(file_path).readlines
   end
 end
 
@@ -24,3 +35,6 @@ require './lib/day_03_solver'
 require './lib/day_04_solver'
 require './lib/day_05_solver'
 require './lib/day_06_solver'
+require './lib/day_07_solver'
+require './lib/day_08_solver'
+require './lib/day_09_solver'
