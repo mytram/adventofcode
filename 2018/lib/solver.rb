@@ -27,6 +27,9 @@ class SolverBase
     )
 
     file_path = File.absolute_path(file_path)
+
+    return nil unless File.exist?(file_path)
+
     File.open(file_path).readlines
   end
 end
