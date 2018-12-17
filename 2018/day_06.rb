@@ -14,8 +14,11 @@ solver = Day06Solver.new(lines)
 assert solver.call, [17, 4]
 assert solver.finite_areas.keys.sort, [3, 4]
 
+assert solver.call2(32), 16
+
 # solver.transpose.each { |row| puts row.map { |i| i == -1 ? '.' : i.to_s }.join }
 
 lines = Day06Solver.raw_input
 solver = Day06Solver.new(lines)
 assert solver.call, [5429, 49]
+assert solver.call2(10_000), 32_614
