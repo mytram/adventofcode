@@ -1,44 +1,26 @@
 require './lib/solver'
 
-solver = Day09Solver.new
+game = Day09Solver::MarbleGame.new(players: 9, last_marble_points: 25)
 
-solver.start_game(players: 9, last_marble_points: 25)
-assert solver.circle, [0]
+marbles = 25.times.map do
+  game.place_marble
+  game.circle.data
+end
 
-solver.play_marble
-assert solver.circle, [0, 1]
+assert marbles.last, [25, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15, 0, 16, 8, 17, 4, 18, 19, 2, 24, 20]
 
-solver.play_marble
-assert solver.circle, [0, 2, 1]
-
-solver.play_marble
-solver.circle.inspect
-
-solver.play_marble
-solver.circle.inspect
-
-solver.play_marble
-assert solver.circle, [0, 4, 2, 5, 1, 3]
-
-solver.play_marble
-assert solver.circle, [0, 4, 2, 5, 1, 6, 3]
+assert game.max_score, 32
 
 solver = Day09Solver.new
 
-solver.call(players: 9, last_marble_points: 25)
-puts solver.player_scores
-puts solver.max_score.inspect
+assert solver.call(players: 10, last_marble_points: 1618), 8317
 
-solver.call(players: 10, last_marble_points: 1618)
+assert solver.call(players: 13, last_marble_points: 7999), 146373
 
-assert solver.max_score, 8317
+puts Benchmark.measure {
+  assert solver.call(players: 427, last_marble_points: 70723), 399745
+}
 
-# 13 players; last marble is worth 7999 points: high score is  8317
-solver.call(players: 13, last_marble_points: 7999)
-assert solver.max_score, 146373
-
-solver.call(players: 427, last_marble_points: 70723)
-puts solver.max_score
-
-solver.call(players: 427, last_marble_points: 70723 * 100)
-puts solver.max_score
+puts Benchmark.measure {
+  assert solver.call(players: 427, last_marble_points: 70723 * 100), 3349098263
+}

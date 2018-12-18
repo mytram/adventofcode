@@ -1,5 +1,6 @@
 require 'ostruct'
 require 'date'
+require 'benchmark'
 
 def assert_truthy(value)
   return if value
@@ -41,3 +42,4 @@ require './lib/day_06_solver'
 require './lib/day_07_solver'
 require './lib/day_08_solver'
 require './lib/day_09_solver'
+require './lib/day_10_solver'
