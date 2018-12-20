@@ -67,7 +67,7 @@ assert solver.recipe.size, 32
 assert solver.recipe.fetch('###..'.chars), '.'
 assert solver.call(20), 2063
 
-# solver = Day12Solver.new
-# puts solver.call(50000000000)
+solver = Day12Solver.new
+puts solver.call(50000000000)
 
 __END__

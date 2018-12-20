@@ -46,7 +46,45 @@ class Day12Solver < SolverBase
   def call(gen)
     plantation = Plantation.new(initial_state: initial_state, recipe: recipe)
 
-    gen.times.map { plantation.spawn }
+    seen_plants = {
+      plantation.plants => true,
+    }
+
+    previous = plantation.plants
+    previous_relevant_pattern = previous.gsub(/\.+$/, '').gsub(/^\.+/, '')
+    repeat = 0
+    gen.times.map do |g|
+      plantation.spawn
+      relevant_pattern = plantation.plants.gsub(/\.+$/, '').gsub(/^\.+/, '')
+
+      if relevant_pattern == previous_relevant_pattern
+        total = relevant_pattern.chars.each_with_index.map do |plant, i|
+          plant == '#' ? (i - 1) : 0
+        end.reject(&:zero?).map do |x|
+          49999999929 + x
+        end.sum
+
+        puts "total #{total}"
+        puts plantation.sum_of_plant_pots
+
+        break
+
+        # puts "#{g} old #{previous}"
+        # puts "#{g} new #{plantation.plants}"
+        # puts "#{g} left  #{plantation.left_side}"
+        # puts "#{g} right #{plantation.right_side}"
+        puts "#{g} diff #{plantation.plants.gsub(relevant_pattern, '')}"
+        # puts "results #{plantation.sum_of_plant_pots}"
+        repeat += 1
+        break if repeat > 10
+      else
+        puts "#{g} new pattern"
+        previous = plantation.plants
+        previous_relevant_pattern = relevant_pattern
+
+        break if repeat.positive?
+      end
+    end
 
     plantation.sum_of_plant_pots
   end
