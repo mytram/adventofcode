@@ -25,5 +25,19 @@ assert "#{power} #{cell}", '30 cell(21, 61)'
 power, cell = solver.call(1718)
 assert "#{power} #{cell}", '31 cell(243, 34)'
 
-# power, cell, size = solver.call2(18)
-# assert "#{power} #{cell} #{size}", '113 cell(90, 269) 16'
+# solver = Day11Solver.new
+# x, y, size = solver.call2(42, 12)
+
+# assert [x + 1, y + 1, size], [232, 251, 12]
+
+# solver = Day11Solver.new
+# power, cell, size = solver.call4(42, 12)
+
+# puts "#{power} #{cell} #{size}"
+
+# assert [x + 1, y + 1, size], [232, 251, 12]
+
+solver = Day11Solver.new
+x, y, size = solver.call2(1718)
+
+puts [x + 1, y+ 1, size].inspect
