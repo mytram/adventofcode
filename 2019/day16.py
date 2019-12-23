@@ -1,5 +1,58 @@
 #
 
+import os
+import psutil
+
+class FFT:
+    def __init__(self, base_pattern, data, phase):
+        self.base_pattern      = base_pattern
+        self.base_pattern_size = len(base_pattern)
+
+        self._data       = data
+        self.data_size   = len(data)
+        self.data_buffer = [None] * self.data_size
+
+        self.patterns = {}
+
+        self.pattern_size = self.data_size + 1
+        self.pattern      = [None] * self.pattern_size
+
+        self.phase = phase
+
+    def apply(self):
+        self.data = list(self._data)
+
+        for _ in range(0, self.phase): self.apply_phase()
+
+        return self.data
+
+    def apply_phase(self):
+        for position in range(1, self.data_size + 1):
+            self.data_buffer[position - 1] = self.__calculate_digit_at(position)
+
+        self.data, self.data_buffer = self.data_buffer, self.data
+
+        return self.data
+
+    def __calculate_digit_at(self, position):
+        self.__generate_pattern(position)
+        return abs(sum(self.data[i] * self.pattern[i+1] for i in range(0, self.data_size))) % 10
+
+    def __generate_pattern(self, position):
+        pattern_pointer, pattern_index = 0, 0
+
+        while True:
+            for i in range(0, position):
+                self.pattern[pattern_index] = self.base_pattern[pattern_pointer]
+
+                pattern_index += 1
+                if pattern_index >= self.pattern_size: return
+
+            pattern_pointer += 1
+
+            if pattern_pointer >= self.base_pattern_size:
+                pattern_pointer = 0
+
 class Solver:
     def __init__(self, base_pattern = (0, 1, 0, -1)):
         self.base_pattern      = base_pattern
@@ -7,43 +60,10 @@ class Solver:
         self.patterns          = {}
 
     def solve_a(self, data, phase):
-        data_size = len(data)
-        data = list(data)
-        data_output = [None] * len(data)
+        fft = FFT(self.base_pattern, data, phase)
+        result = fft.apply()
 
-        for _ in range(0, phase):
-            self.__apply_fft(data, data_size, data_output)
-            data, data_output = data_output, data
-
-        return "".join(str(_) for _ in data[0:8])
-
-    def __apply_fft(self, data, data_size, data_output):
-        for p in range(1, data_size + 1):
-            data_output[p - 1] = self.__calculate_digit(data, data_size, p)
-
-    def __calculate_digit(self, data, data_size, position):
-        pattern = self.__get_pattern(data_size, position)
-        return abs(sum(data[i] * pattern[i] for i in range(0, data_size))) % 10
-
-    def __get_pattern(self, data_size, position):
-        if position not in self.patterns:
-            self.patterns[position] = self.__generate_pattern(data_size, position)
-
-        return self.patterns[position]
-
-    def __generate_pattern(self, data_size, position):
-        pattern_size = data_size + 1
-        pattern = ()
-        pattern_pointer = 0
-
-        while len(pattern) < pattern_size:
-            pattern += (self.base_pattern[pattern_pointer], ) * position
-            pattern_pointer += 1
-
-            if pattern_pointer >= self.base_pattern_size:
-                pattern_pointer = 0
-
-        return pattern[1:pattern_size]
+        return "".join(str(_) for _ in result[0:8])
 
 if __name__ == "__main__":
     line = "12345678"
@@ -72,6 +92,7 @@ if __name__ == "__main__":
     line = file.readline().strip()
     solver = Solver()
     solution = solver.solve_a(data = tuple(int(e) for e in line), phase = 100)
+    assert "88323090" == solution
     print(solution)
 
     # 03036732577212944063491565474664 becomes 84462026
@@ -79,3 +100,6 @@ if __name__ == "__main__":
     # solver = Solver()
     # solution = solver.solve_b(data = tuple(int(e) for e in line), phase = 100)
     # assert solution == "84462026"
+
+    process = psutil.Process(os.getpid())
+    print("%dM" % (process.memory_info().rss / (1024 * 1024)))
