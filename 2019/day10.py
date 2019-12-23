@@ -1,24 +1,20 @@
-#
 from collections import defaultdict
 
 class Solver:
-    X = 0
-    Y = 1
-
     def solve_a(self, lines):
         asteroids = self.locate_asteroids(lines)
 
-        observed = defaultdict(int)
+        observed = defaultdict(list)
 
         for source in asteroids:
             for target in asteroids:
-                if self.is_blocked(source, target, asteroids): continue
+                if self.is_target_observable(source, target, observed, asteroids):
+                    observed[source].append(target)
 
-                observed[source] += 1
-
-        return sorted(observed.items(), key=lambda item: item[1])[-1]
+        return sorted(observed.items(), key=lambda item: len(item[1]))[-1]
 
     # private methods
+
     def locate_asteroids(self, lines):
         asteroids = []
 
@@ -32,19 +28,31 @@ class Solver:
 
         return tuple(asteroids)
 
+    def is_target_observable(self, source, target, observed, asteroids):
+        if source == target: return False
+
+        if target in observed:
+            if source not in observed[target]: return False
+        else:
+            if self.is_blocked(source, target, asteroids): return False
+
+        return True
+
     def is_blocked(self, source, target, asteroids):
-        if source == target: return True
-
-        for other in asteroids:
-            if self.is_crossed_in_between(source, other, target): return True
-
-        return False
+        blocking_asteroid = next(
+            (a for a in asteroids if self.is_crossed_in_between(source, a, target)),
+            None
+        )
+        return blocking_asteroid != None
 
     def is_crossed_in_between(self, source, other, target):
-        if (source > other and target < other) or (source < other and target > other):
-            return self.tangent(source, other) == self.tangent(other, target)
+        if not self.is_in_between(other, source, target):
+            return False
 
-        return False
+        return self.tangent(source, other) == self.tangent(target, other)
+
+    def is_in_between(self, other, source, target):
+        return (source > other and target < other) or (source < other and target > other)
 
     def tangent(self, point1, point2):
         delta_x = point2[0] - point1[0]
@@ -62,4 +70,6 @@ if __name__ == '__main__':
     # file = open("./data/day10_sample_6x3x41.txt", "r")
     lines = [ l.strip() for l in file.readlines() ]
     solver = Solver()
-    print(solver.solve_a(lines))
+    # ((20, 18), 280))
+    found = solver.solve_a(lines)
+    print("(%s, %s)" % (found[0], len(found[1])))
