@@ -45,11 +45,9 @@ def check_repeat_rule?(digits)
     counts[d] += 1
   end
 
-  counts.reject! { |_, v| v < 2 }
+  counts.reject! { |_, v| v != 2 }
 
-  max_key = counts.keys.max
-
-  counts[max_key] == 2
+  !counts.empty?
 end
 
 def check_full_rule?(number)

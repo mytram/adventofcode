@@ -23,6 +23,8 @@ class Solver
       lay_wire(wire: wire, label: index, map: map)
     end
 
+    # puts "#{map}"
+
     map.reject { |_, labels| labels.size < 2 }
       .map { |_, labels| labels.values.sum }
       .min
@@ -86,7 +88,7 @@ class Solver
 
     map[key] ||= {}
 
-    return if map[key][label]
+    # return if map[key].key?(label)
 
     map[key][label] = steps + 1
   end
@@ -117,5 +119,5 @@ wires = File.open('data/day03.txt')
 
 solver = Solver.new
 
-# puts solver.solve_a(wires)
+puts solver.solve_a(wires)
 puts solver.solve_b(wires)
