@@ -7,18 +7,13 @@ JIT = {'code': 5, 'length': 3, 'num_of_params': 2}
 JIF = {'code': 6, 'length': 3, 'num_of_params': 2}
 LT  = {'code': 7, 'length': 4, 'num_of_params': 2}
 EQ  = {'code': 8, 'length': 4, 'num_of_params': 2}
+AR  = {'code': 9, 'length': 2, 'num_of_params': 1}
 
 HALT = 99
 
 MODE_POSITION  = 0
 MODE_IMMEDIATE = 1
-
-def get_param_value(position, program, param_mode):
-    """Get param value"""
-    if param_mode == MODE_IMMEDIATE:
-        return program[position]
-
-    return program[program[position]]
+MODE_RELATIVE  = 2
 
 class IntcodeComputer:
     """Intcode computer"""
@@ -27,7 +22,7 @@ class IntcodeComputer:
         self.restart()
 
     def load(self, program):
-        """Local program"""
+        """Load program"""
         self.restart()
         self._program = list(program)
         self._instruction_counter = 0
@@ -38,6 +33,8 @@ class IntcodeComputer:
         self._outputs = []
         self.halted = False
         self.waiting_for_input = False
+        self._relative_base = 0
+        self._memory = []
 
     @property
     def has_output(self):
@@ -73,6 +70,37 @@ class IntcodeComputer:
             if self.halted:
                 return
 
+    # memory management
+    def _ensure_memory(self, address):
+        if address < len(self._memory):
+            return
+
+        temp_memory = self._memory
+        self._memory = [0] * (address * 2)
+        self._memory[0:len(temp_memory)] = temp_memory[0:]
+
+    def _load(self, address):
+        if address >= len(self._program):
+            self._ensure_memory(address)
+            return self._memory[address]
+
+        return self._program[address]
+
+    def _store(self, address, value):
+        if address >= len(self._program):
+            self._ensure_memory(address)
+            self._memory[address] = value
+            return
+
+        self._program[address] = value
+
+    def _execute_binary_operation(self, param_modes, operation):
+        address_a, address_b, store, = self._get_addresses(param_modes, 3)
+
+        operand_a, operand_b = self._load(address_a), self._load(address_b)
+
+        self._store(store, operation(operand_a, operand_b))
+
     def _execute(self, inputs):
         instruction_counter = self._instruction_counter
         program = self._program
@@ -82,14 +110,12 @@ class IntcodeComputer:
         opcode, param_modes = self._parse_instruction(instruction)
 
         if opcode == ADD['code']:
-            a, b = self._get_params(instruction_counter, program, param_modes, 2)
-            program[program[instruction_counter + 3]] = a + b
+            self._execute_binary_operation(param_modes, lambda a, b: a + b)
 
             return instruction_counter + ADD['length']
 
         if opcode == MUL['code']:
-            a, b = self._get_params(instruction_counter, program, param_modes, 2)
-            program[program[instruction_counter + 3]] = a * b
+            self._execute_binary_operation(param_modes, lambda a, b: a * b)
 
             return instruction_counter + MUL['length']
 
@@ -98,49 +124,56 @@ class IntcodeComputer:
                 self.waiting_for_input = True
                 return instruction_counter
 
-            program[program[instruction_counter + 1]] = inputs.pop(0)
+            address, = self._get_addresses(param_modes, 1)
+
+            self._store(address, inputs.pop(0))
 
             return instruction_counter + IN['length']
 
         if opcode == OUT['code']:
-            value, = self._get_params(instruction_counter, program, param_modes, 1)
+            address, = self._get_addresses(param_modes, 1)
+            value = self._load(address)
             outputs.append(value)
 
             return instruction_counter + OUT['length']
 
         if opcode == JIT['code']:
-            a, b = self._get_params(instruction_counter, program, param_modes, 2)
+            operand_a, operand_b = [self._load(addr) for addr in self._get_addresses(param_modes, 2)]
 
-            if not a == 0:
-                return b
+            if not operand_a == 0:
+                return operand_b
 
             return instruction_counter + JIT['length']
 
         if opcode == JIF['code']:
-            a, b = self._get_params(instruction_counter, program, param_modes, 2)
+            operand_a, operand_b = [self._load(addr) for addr in self._get_addresses(param_modes, 2)]
 
-            if a == 0:
-                return b
+            if operand_a == 0:
+                return operand_b
 
             return instruction_counter + JIT['length']
 
         if opcode == LT['code']:
-            a, b = self._get_params(instruction_counter, program, param_modes, 2)
-            program[program[instruction_counter + 3]] = 1 if a < b else 0
+            self._execute_binary_operation(param_modes, lambda a, b: 1 if a < b else 0)
 
             return instruction_counter + LT['length']
 
         if opcode == EQ['code']:
-            a, b = self._get_params(instruction_counter, program, param_modes, 2)
-            program[program[instruction_counter + 3]] = 1 if a == b else 0
+            self._execute_binary_operation(param_modes, lambda a, b: 1 if a == b else 0)
 
             return instruction_counter + EQ['length']
+
+        if opcode == AR['code']:
+            address, = self._get_addresses(param_modes, 1)
+            self._relative_base += self._load(address)
+
+            return instruction_counter + AR['length']
 
         if opcode == HALT:
             self.halted = True
             return None
 
-        raise 'should not be here'
+        raise Exception(f'unknown opcode {opcode}')
 
     def _parse_instruction(self, instruction):
         digits = list(str(instruction))
@@ -156,12 +189,25 @@ class IntcodeComputer:
 
         return opcode, param_modes
 
-    def _get_params(self, instruction_counter, program, param_modes, number):
-        params = []
+    def _get_addresses(self, param_modes, number):
+        addresses = []
 
         for i in range(number):
             param_mode = param_modes[i] if i < len(param_modes) else MODE_POSITION
-            value = get_param_value(instruction_counter + i + 1, program, param_mode)
-            params.append(value)
+            addr = self._get_address(self._instruction_counter + i + 1, param_mode)
+            addresses.append(addr)
 
-        return params
+        return addresses
+
+    def _get_address(self, address, param_mode):
+        if param_mode == MODE_IMMEDIATE:
+            return address
+
+        if param_mode == MODE_POSITION:
+            return self._program[address]
+
+        if param_mode == MODE_RELATIVE:
+            address = self._program[address] + self._relative_base
+            return address
+
+        raise Exception(f'unknown param mode {param_mode} at address {address}')
